@@ -50,7 +50,7 @@ Para ejecutar el programa.
 
 ## Objetivo
 
-Este proyecto tiene como objetivo implementar el algoritmo de Dijkstra en C++14, utilizando el paradigma funcional. La implementación se basa en el código de proporcionado, el cual fue desarrollado en lenguaje haskell.
+Este proyecto tiene como objetivo implementar el algoritmo de Dijkstra en C++14, utilizando el paradigma funcional. La implementación se basa en el código proporcionado, el cual fue desarrollado en lenguaje haskell.
 
 ## Licencia
 
