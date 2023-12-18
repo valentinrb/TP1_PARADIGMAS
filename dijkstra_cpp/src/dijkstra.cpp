@@ -10,81 +10,66 @@ int at(const std::vector<int>& xs, int i) {
 
 VC vercono(const VC& verticesprueba, const Vertice& v) {
     VC result;
-    for (const auto& x : verticesprueba) {
-        if (x == v) {
-            result.push_back(x);
-        }
-    }
+
+    std::copy_if(verticesprueba.begin(), verticesprueba.end(), std::back_inserter(result),
+                 [v](const Vertice& x) { return x == v; });
+
     return result;
 }
 
 VNC vernocono(const VC& verticesprueba, const Vertice& v) {
     VNC result;
-    for (const auto& x : verticesprueba) {
-        if (x != v) {
-            result.push_back(x);
-        }
-    }
+
+    std::copy_if(verticesprueba.begin(), verticesprueba.end(), std::back_inserter(result),
+                 [v](const Vertice& x) { return x != v; });
+
     return result;
 }
 
 int costo(const std::vector<Arista>& as, const Vertice& o, const Vertice& d) {
-    std::vector<Arista> filtrado;
-    for (const auto& a : as) {
-        if (a.orig.nombre == o.nombre && a.dest.nombre == d.nombre) {
-            filtrado.push_back(a);
-        }
-    }
+    auto it = std::find_if(as.begin(), as.end(), [o, d](const Arista& a) {
+        return a.orig == o && a.dest == d;
+    });
 
-    if (filtrado.empty()) {
-        return oo;
-    } else {
-        return filtrado[0].peso;
-    }
+    return (it != as.end()) ? it->peso : oo;
 }
 
 Vertice verticenulo() {
     return {0};
 }
 
-std::vector<Vertice> previnicial(const std::vector<Vertice>& verticesprueba, const Vertice& v) {
-    std::vector<Vertice> resultado;
-    for (const auto& x : verticesprueba) {
-        if (x.nombre == v.nombre) {
-            resultado.push_back(v);
-        } else {
-            resultado.push_back(verticenulo());
-        }
-    }
+VC previnicial(const VC& verticesprueba, const Vertice& v) {
+    VC resultado;
+
+    std::transform(verticesprueba.begin(), verticesprueba.end(), std::back_inserter(resultado), [v](const Vertice& x) {
+                       return (x == v) ? v : verticenulo();
+                   });
+
     return resultado;
 }
 
 std::vector<int> acuinicial(const std::vector<Arista>& aristasprueba, const std::vector<Vertice>& verticesprueba, const Vertice& v) {
     std::vector<int> resultado;
-    for (const auto& x : verticesprueba) {
-        if (x.nombre == v.nombre) {
-            resultado.push_back(0);
-        } else {
-            resultado.push_back(costo(aristasprueba, v, x));
-        }
-    }
+
+    std::transform(verticesprueba.begin(), verticesprueba.end(), std::back_inserter(resultado), [aristasprueba, v](const Vertice& x) {
+                       return (x == v) ? 0 : costo(aristasprueba, v, x);
+                   });
+
     return resultado;
 }
 
 template<typename T>
 std::vector<T> cambiarnth(const T& a, int n, const std::vector<T>& lista) {
-    if (n < 0 || n >= lista.size()) {
+    if (n < 0 || n >= lista.size())
         return lista;
-    }
 
     std::vector<T> resultado;
-    for (int i = 0; i < lista.size(); ++i) {
-        if (i == n) {
-            resultado.push_back(a);
-        } else {
-            resultado.push_back(lista[i]);
-        }
-    }
+    resultado.reserve(lista.size());
+
+    std::transform(lista.begin(), lista.end(), std::back_inserter(resultado), [a, n, i = 0](const T& elem) mutable {
+                       return (i++ == n) ? a : elem;
+                   });
+
     return resultado;
 }
 
@@ -133,32 +118,20 @@ Dijkstra iteracion(const Dijkstra& d) {
     new_vc.insert(new_vc.begin(), next_vertex);
 
     std::vector<Vertice> new_vnc;
-    for (const auto& vertex : d.vnc) {
-        if (vertex != next_vertex) {
-            new_vnc.push_back(vertex);
-        }
-    }
+    std::copy_if(d.vnc.begin(), d.vnc.end(), std::back_inserter(new_vnc),
+                 [next_vertex](const Vertice& vertex) { return vertex != next_vertex; });
 
     std::vector<Arista> acandidata;
-    for (const auto& a : d.a) {
-        if (a.orig.nombre == next_vertex.nombre) {
-            acandidata.push_back(a);
-        }
-    }
+    std::copy_if(d.a.begin(), d.a.end(), std::back_inserter(acandidata),
+                 [next_vertex](const Arista& a) { return a.orig == next_vertex; });
 
     std::vector<Arista> avalidas;
-    for (const auto& a : acandidata) {
-        if (std::find(new_vnc.begin(), new_vnc.end(), a.dest) != new_vnc.end()) {
-            avalidas.push_back(a);
-        }
-    }
+    std::copy_if(acandidata.begin(), acandidata.end(), std::back_inserter(avalidas),
+                 [&new_vnc](const Arista& a) { return std::find(new_vnc.begin(), new_vnc.end(), a.dest) != new_vnc.end(); });
 
-    std::pair<std::vector<int>, std::vector<Vertice>> resul = actpeso(std::make_pair(d.pacu, d.prev), avalidas);
+    auto resul = actpeso(std::make_pair(d.pacu, d.prev), avalidas);
 
-    std::vector<int> nuevoacu = resul.first;
-    std::vector<Vertice> nuevoprev = resul.second;
-
-    return {d.a, new_vc, new_vnc, nuevoacu, nuevoprev};
+    return {d.a, new_vc, new_vnc, resul.first, resul.second};
 }
 
 Dijkstra caminocorto(const Dijkstra& d) {
